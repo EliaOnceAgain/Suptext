@@ -1,0 +1,14 @@
+# Ignore everything
+*
+
+# Except
+!/.gitignore
+
+!*.go
+!go.sum
+!go.mod
+
+!README.md
+!LICENSE
+
+!*/
