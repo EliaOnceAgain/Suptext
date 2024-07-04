@@ -10,5 +10,7 @@
 
 !README.md
 !LICENSE
+!Dockerfile
 
 !*/
+!/runner.sh
