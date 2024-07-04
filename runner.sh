@@ -72,7 +72,7 @@ function video_input {
   input_video_path_no_extension="${input_video%.*}"
   tempfile_path="$(get_tempfile)"
   # Extract subtitles
-  if ! ffmpeg -loglevel error -i "${input_video}" -map 0:s:"${stream_index}" -c:s copy "${tempfile_path}.sup"; then
+  if ! ffmpeg -loglevel error -i "${input_video}" -map 0:"${stream_index}" -c:s copy "${tempfile_path}.sup"; then
     logerr "Failed to extract subtitles from input video"
   fi
   log "Successfully extracted subtitles from input video"
