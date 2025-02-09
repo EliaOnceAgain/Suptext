@@ -31,6 +31,7 @@ func ReadPGS(r *bufio.Reader) (PGS, error) {
         if 0 == section.Size {
             ds.END = section
             pgs.Sections = append(pgs.Sections, ds)
+            ds = DisplaySet{}
             continue
         }
         // Read section data bytes
@@ -66,7 +67,7 @@ func ReadPGS(r *bufio.Reader) (PGS, error) {
                 return pgs, err
             }
             section.Data = data
-            ds.ODS = section
+            ds.ODS = append(ds.ODS, section)
         } else {
             return pgs, fmt.Errorf("Segment type not supported: 0x%x", section.Type)
         }
