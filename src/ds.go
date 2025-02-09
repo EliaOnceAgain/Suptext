@@ -12,7 +12,7 @@ type DisplaySet struct {
     PCS Section
     WDS Section
     PDS Section
-    ODS Section
+    ODS []Section
     END Section
 }
 
@@ -42,29 +42,41 @@ func (d *DisplaySet) AppendSRT(ocr *gosseract.Client, f *os.File, i uint, ets st
 }
 
 func (d *DisplaySet) OCR(ocr *gosseract.Client) (string, error) {
-    var text string
-    // Decode image data
-    img_encoded := d.ODS.Data.(ObjectData).Data
-    img_decoded, err := RLEDecode(img_encoded)
-    if err != nil {
-        return text, err
+    var text, ocr_result string
+
+    for _, ods := range d.ODS {
+        if !ods.Data.(ObjectData).Ended {
+            continue
+        }
+        // Decode image data
+        img_encoded := ods.Data.(ObjectData).Data
+        img_decoded, err := RLEDecode(img_encoded)
+        if err != nil {
+            return text, err
+        }
+        // Create image
+        img, err := CreateImage(img_decoded, d.PDS.Data.(PaletteData).Palettes)
+        if err != nil {
+            return text, err
+        }
+        // Get image bytes
+        img_bytes, err := GetImageBytesJPEG(img)
+        if err != nil {
+            return text, err
+        }
+        // OCR Image
+        ocr_result, err = RunOCR(ocr, img_bytes)
+        if err != nil {
+            return text, err
+        }
+        // Concatenate strings
+        if text != "" {
+            text = text + "\n" + ocr_result
+        } else {
+            text = ocr_result
+        }
     }
-    // Create image
-    img, err := CreateImage(img_decoded, d.PDS.Data.(PaletteData).Palettes)
-    if err != nil {
-        return text, err
-	}
-	// Get image bytes
-	img_bytes, err := GetImageBytesJPEG(img)
-	if err != nil {
-	    return text, err
-	}
-	// OCR Image
-	text, err = RunOCR(ocr, img_bytes)
-	if err != nil {
-	    return text, err
-	}
-	return text, err
+	return text, nil
 }
 
 func (d *DisplaySet) Print() {
