@@ -45,6 +45,9 @@ func (d *DisplaySet) OCR(ocr *gosseract.Client) (string, error) {
     var text, ocr_result string
 
     for _, ods := range d.ODS {
+        if !ods.Data.(ObjectData).Ended {
+            continue
+        }
         // Decode image data
         img_encoded := ods.Data.(ObjectData).Data
         img_decoded, err := RLEDecode(img_encoded)
