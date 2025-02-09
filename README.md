@@ -13,7 +13,7 @@ OS and download the english language package
 - Run `go get -t github.com/eliaonceagain/suptext/v0.1.0`
 
 ### Run via Docker
-The following instructions use [eliaonceagain/subtext](https://hub.docker.com/r/eliaonceagain/suptext/tags) Docker image.
+The following instructions use [eliaonceagain/suptext](https://hub.docker.com/r/eliaonceagain/suptext/tags) Docker image.
 The image contains a utility command that extracts eng-PGS/SUP subtitles from a video file using `ffmpeg` 
 then calls `Suptext` Go package to decode and output the result SRT SubRip file.
 
@@ -57,6 +57,10 @@ docker exec suptext supcli -v "/mymedia/SV-S04E10.mkv"
 2024/07/04 17:20:23 Writing SRT file: /tmp/tmp.xY7TPdfhCp.srt
 2024/07/04 17:26:31 Success
 ```
+
+### Changelog
+v0.1.1 - Added support for fragmented ODS
+
 ### Issues
 Not working as expected? Open an issue, add description, and upload a link to the video or subtitles.
 
