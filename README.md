@@ -10,7 +10,7 @@ Run via Docker section for a utility that supports video input and does that for
 ### Run Locally
 - Install [Tesseract-OCR](https://github.com/tesseract-ocr/tessdoc/blob/main/Installation.md) based on your
 OS and download the english language package 
-- Run `go get -t github.com/eliaonceagain/suptext/v0.1.0`
+- Run `go install github.com/eliaonceagain/suptext@latest`
 
 ### Run via Docker
 The following instructions use [eliaonceagain/suptext](https://hub.docker.com/r/eliaonceagain/suptext/tags) Docker image.
@@ -60,6 +60,7 @@ docker exec suptext supcli -v "/mymedia/SV-S04E10.mkv"
 
 ### Changelog
 v0.1.1 - Added support for fragmented ODS
+v0.1.2 - Ignore truncated PCS extension
 
 ### Issues
 Not working as expected? Open an issue, add description, and upload a link to the video or subtitles.

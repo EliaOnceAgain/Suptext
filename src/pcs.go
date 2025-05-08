@@ -3,6 +3,7 @@ package suptext
 import (
     "encoding/binary"
     "fmt"
+    "log"
 )
 
 const CompositionObjectSize = 8
@@ -85,7 +86,8 @@ func NewCompositionObject(bytes []byte) (CompositionObject, error) {
     }
     // Not enough bytes for extension
     if len(bytes) < 16 {
-        return composition, fmt.Errorf("Truncated composition object extension")
+        log.Println("[WARN]: Truncated composition object extension. Ignoring extension.")
+        return composition, nil
     }
     // Read extension fields
     composition.HCropPos    = binary.BigEndian.Uint16(bytes[:2])
