@@ -6,4 +6,4 @@ RUN apt-get update && \
     apt-get install -y file libtesseract-dev libleptonica-dev tesseract-ocr-eng ffmpeg && \
     chmod +x /usr/bin/supcli && \
     go install github.com/eliaonceagain/suptext@latest
-CMD tail -f /dev/null
+CMD ["tail", "-f", "/dev/null"]

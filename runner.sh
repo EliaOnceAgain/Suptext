@@ -106,6 +106,6 @@ if [[ -n "${input_video}" ]]; then
   log "Processing video file: $(basename "${input_video}")"
   video_input
 else
-  log "Processing video file: $(basename "${input_sup]}")"
+  log "Processing video file: $(basename "${input_sup}")"
   suptext "${input_sup}"
 fi

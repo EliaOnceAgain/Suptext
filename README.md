@@ -59,7 +59,7 @@ docker exec suptext supcli -v "/mymedia/SV-S04E10.mkv"
 ```
 
 ### Changelog
-v0.1.1 - Added support for fragmented ODS
+v0.1.1 - Added support for fragmented ODS  
 v0.1.2 - Ignore truncated PCS extension
 
 ### Issues
