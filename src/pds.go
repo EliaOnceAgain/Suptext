@@ -16,7 +16,7 @@ type PaletteDefinition struct {
 type PaletteData struct {
     ID uint8
     Version uint8
-    NumPalettes uint8
+    NumPalettes uint16
     Palettes [256]PaletteDefinition `json:"-"`
 }
 
@@ -33,12 +33,12 @@ func NewPaletteData(bytes []byte) (PaletteData, error) {
     v := uint8(bytes[1])
 
     // Calculate number of palettes in buffer
-    num_palettes := uint8(len(bytes) / 5)
+    num_palettes := uint16(len(bytes) / 5)
     pds := PaletteData{ID: id, Version: v, NumPalettes: num_palettes}
 
     // Read the palettes definitions
     offset := 2
-    for i := uint8(0); i < num_palettes; i++ {
+    for i := uint16(0); i < num_palettes; i++ {
         entry_id := uint8(bytes[offset])
         pds.Palettes[entry_id] = PaletteDefinition{
             Y: uint8(bytes[offset + 1]),
