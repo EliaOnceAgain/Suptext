@@ -60,7 +60,7 @@ docker exec suptext supcli -v "/mymedia/SV-S04E10.mkv"
 
 ### Changelog
 v0.1.1 - Added support for fragmented ODS  
-v0.1.2 - Ignore truncated PCS extension
+v0.1.2 - Ignore truncated PCS extension  
 v0.1.3 - Fix for issue #5 (output contains timestamps but no text)
 
 ### Issues
