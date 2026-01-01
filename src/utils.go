@@ -5,6 +5,7 @@ import (
     "encoding/binary"
     "fmt"
     "io"
+    "log"
     "time"
 )
 
@@ -64,13 +65,24 @@ func ReadPGS(r *bufio.Reader) (PGS, error) {
         } else if section.Type == ODS {
             data, err := NewObjectData(section_data)
             if err != nil {
-                return pgs, err
+                log.Printf("Warning: Failed to parse ODS section at PTS %d: %v", section.PTS, err)
+                // Continue processing instead of returning error
+                continue
             }
             // Merge to previous ODS if it wasn't ended
             if running_ods != nil {
                 err = running_ods.MergeSequence(data)
                 if err != nil {
-                    return pgs, err
+                    log.Printf("Warning: Failed to merge ODS sequence at PTS %d: %v", section.PTS, err)
+                    // Continue with new ODS instead of failing
+                    if !data.Ended {
+                        running_ods = &data
+                    } else {
+                        section.Data = data
+                        ds.ODS = append(ds.ODS, section)
+                        running_ods = nil
+                    }
+                    continue
                 }
                 // If ODS now ended, add it to DS
                 if running_ods.Ended {
@@ -90,6 +102,20 @@ func ReadPGS(r *bufio.Reader) (PGS, error) {
     }
 
     // EOF reached: append last DisplaySet if END marker was missing
+    // Also merge any incomplete ODS sequences
+    if running_ods != nil {
+        log.Printf("Warning: Incomplete ODS ID %d at EOF - merging into current DisplaySet", running_ods.ID)
+        section := Section{
+            PTS: ds.PCS.PTS, // Use PCS PTS as fallback
+            DTS: ds.PCS.DTS,
+            Type: ODS,
+            Size: uint16(running_ods.BytesRead),
+            Data: *running_ods,
+        }
+        ds.ODS = append(ds.ODS, section)
+        running_ods = nil
+    }
+    
     if ds.END.Type != END &&
         (ds.PCS.Type == PCS ||
          ds.WDS.Type == WDS ||

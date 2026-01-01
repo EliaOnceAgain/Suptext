@@ -64,29 +64,58 @@ func (d *DisplaySet) OCR(ocr *gosseract.Client) (string, error) {
     var text, ocr_result string
 
     for _, ods := range d.ODS {
-        if !ods.Data.(ObjectData).Ended {
+        objData, ok := ods.Data.(ObjectData)
+        if !ok {
+            log.Printf("Warning: Invalid ODS data type in DisplaySet")
             continue
         }
+        if !objData.Ended {
+            continue
+        }
+        
+        // Validate Width/Height before decoding
+        if objData.Width == 0 || objData.Height == 0 {
+            log.Printf("Warning: Skipping ODS ID %d - invalid dimensions (Width=%d, Height=%d)", objData.ID, objData.Width, objData.Height)
+            continue
+        }
+        if objData.Width > 1920 || objData.Height > 1080 {
+            log.Printf("Warning: Skipping ODS ID %d - dimensions exceed reasonable bounds (Width=%d, Height=%d)", objData.ID, objData.Width, objData.Height)
+            continue
+        }
+        
         // Decode image data
-        img_encoded := ods.Data.(ObjectData).Data
+        img_encoded := objData.Data
         img_decoded, err := RLEDecode(img_encoded)
         if err != nil {
-            return text, err
+            log.Printf("Warning: Failed to decode RLE for ODS ID %d: %v", objData.ID, err)
+            continue
         }
         // Create image
-        img, err := CreateImage(img_decoded, d.PDS.Data.(PaletteData).Palettes)
+        if d.PDS.Data == nil {
+            log.Printf("Warning: Missing PDS data for ODS ID %d", objData.ID)
+            continue
+        }
+        paletteData, ok := d.PDS.Data.(PaletteData)
+        if !ok {
+            log.Printf("Warning: Invalid PDS data type for ODS ID %d", objData.ID)
+            continue
+        }
+        img, err := CreateImage(img_decoded, paletteData.Palettes)
         if err != nil {
-            return text, err
+            log.Printf("Warning: Failed to create image for ODS ID %d: %v", objData.ID, err)
+            continue
         }
         // Get image bytes
         img_bytes, err := GetImageBytesJPEG(img)
         if err != nil {
-            return text, err
+            log.Printf("Warning: Failed to encode JPEG for ODS ID %d: %v", objData.ID, err)
+            continue
         }
         // OCR Image
         ocr_result, err = RunOCR(ocr, img_bytes)
         if err != nil {
-            return text, err
+            log.Printf("Warning: OCR failed for ODS ID %d: %v", objData.ID, err)
+            continue
         }
         // Concatenate strings
         if text != "" {
