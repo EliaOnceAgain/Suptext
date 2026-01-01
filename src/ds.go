@@ -47,6 +47,57 @@ func (d *DisplaySet) GetActiveCompositionObjects() []CompositionObject {
     return pcsData.Comps
 }
 
+// ValidateWindowCompositionLinkage checks that all composition objects reference valid windows
+func (d *DisplaySet) ValidateWindowCompositionLinkage() error {
+    if d.PCS.Data == nil || d.WDS.Data == nil {
+        return nil // Can't validate without both PCS and WDS
+    }
+    
+    pcsData, ok := d.PCS.Data.(PresentationCompositionData)
+    if !ok {
+        return nil
+    }
+    
+    wdsData, ok := d.WDS.Data.(WindowsData)
+    if !ok {
+        return nil
+    }
+    
+    // Build a map of valid window IDs
+    validWinIDs := make(map[uint8]bool)
+    for _, window := range wdsData.Windows {
+        validWinIDs[window.WinID] = true
+    }
+    
+    // Check each composition object references a valid window
+    for _, comp := range pcsData.Comps {
+        if !validWinIDs[comp.WinID] {
+            log.Printf("Warning: Composition object ObjID %d references invalid WinID %d", comp.ObjID, comp.WinID)
+        }
+    }
+    
+    return nil
+}
+
+// GetScreenDimensions returns screen dimensions from PCS, or defaults
+func (d *DisplaySet) GetScreenDimensions() (uint16, uint16) {
+    if d.PCS.Data == nil {
+        return DefaultScreenWidth, DefaultScreenHeight
+    }
+    
+    pcsData, ok := d.PCS.Data.(PresentationCompositionData)
+    if !ok {
+        return DefaultScreenWidth, DefaultScreenHeight
+    }
+    
+    // Use PCS dimensions if valid, otherwise defaults
+    if pcsData.Width > 0 && pcsData.Height > 0 {
+        return pcsData.Width, pcsData.Height
+    }
+    
+    return DefaultScreenWidth, DefaultScreenHeight
+}
+
 func (d *DisplaySet) AppendSRT(ocr *gosseract.Client, f *os.File, i uint, ets string) error {
     text, err := d.OCR(ocr)
     if err != nil {

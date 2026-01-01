@@ -31,6 +31,8 @@ func ReadPGS(r *bufio.Reader) (PGS, error) {
         // If section has no data, add as is
         if 0 == section.Size {
             ds.END = section
+            // Validate window-composition linkage before appending
+            ds.ValidateWindowCompositionLinkage()
             pgs.Sections = append(pgs.Sections, ds)
             ds = DisplaySet{}
             continue
@@ -49,12 +51,20 @@ func ReadPGS(r *bufio.Reader) (PGS, error) {
             section.Data = data
             ds.PCS = section
         } else if section.Type == WDS {
-            data, err := NewWindowsData(section_data)
+            // Get screen dimensions from PCS if available, otherwise use defaults
+            screenWidth, screenHeight := ds.GetScreenDimensions()
+            data, err := NewWindowsDataWithBounds(section_data, screenWidth, screenHeight)
             if err != nil {
-                return pgs, err
+                log.Printf("Warning: Failed to parse WDS section at PTS %d: %v", section.PTS, err)
+                // Continue processing instead of returning error
+                continue
             }
             section.Data = data
             ds.WDS = section
+            // Validate linkage if we now have both PCS and WDS
+            if ds.PCS.Data != nil {
+                ds.ValidateWindowCompositionLinkage()
+            }
         } else if section.Type == PDS {
             data, err := NewPaletteData(section_data)
             if err != nil {
@@ -121,7 +131,8 @@ func ReadPGS(r *bufio.Reader) (PGS, error) {
          ds.WDS.Type == WDS ||
          ds.PDS.Type == PDS ||
          len(ds.ODS) > 0) {
-
+        // Validate window-composition linkage before appending
+        ds.ValidateWindowCompositionLinkage()
         pgs.Sections = append(pgs.Sections, ds)
     }
 
