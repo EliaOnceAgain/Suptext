@@ -35,6 +35,12 @@ type CompositionObject struct {
 }
 
 func NewPresentationData(bytes []byte) (PresentationCompositionData, error) {
+    // Validate minimum buffer length
+    if len(bytes) < PresentationCompositionSize {
+        log.Printf("Warning: Truncated presentation composition header (need %d bytes, got %d)", PresentationCompositionSize, len(bytes))
+        return PresentationCompositionData{}, fmt.Errorf("Truncated presentation composition header")
+    }
+
     section := PresentationCompositionData{
         Width:          binary.BigEndian.Uint16(bytes[:2]),
         Height:         binary.BigEndian.Uint16(bytes[2:4]),
@@ -51,9 +57,17 @@ func NewPresentationData(bytes []byte) (PresentationCompositionData, error) {
 
     // Read composition objects
     for i := uint8(1); i <= section.NumComps; i++ {
+        // Check if we have enough bytes remaining
+        if offset >= len(bytes) {
+            log.Printf("Warning: Truncated composition objects list (expected %d objects, only read %d before buffer end)", section.NumComps, i-1)
+            break
+        }
+        
         comp, err := NewCompositionObject(bytes[offset:])
         if err != nil {
-            return section, err
+            log.Printf("Warning: Failed to parse composition object %d: %v", i, err)
+            // Continue processing remaining objects instead of failing completely
+            break
         }
         section.Comps = append(section.Comps, comp)
         // Advance to the beginning of next object
@@ -70,6 +84,7 @@ func NewPresentationData(bytes []byte) (PresentationCompositionData, error) {
 func NewCompositionObject(bytes []byte) (CompositionObject, error) {
     // Not enough bytes
     if len(bytes) < 8 {
+        log.Printf("Warning: Truncated composition object - need at least 8 bytes, got %d", len(bytes))
         return CompositionObject{}, fmt.Errorf("Truncated composition object")
     }
     // Read composition fields
@@ -86,13 +101,13 @@ func NewCompositionObject(bytes []byte) (CompositionObject, error) {
     }
     // Not enough bytes for extension
     if len(bytes) < 16 {
-        log.Println("[WARN]: Truncated composition object extension. Ignoring extension.")
+        log.Printf("Warning: Truncated composition object extension for ObjID %d (need 16 bytes, got %d). Extension fields will be zero.", composition.ObjID, len(bytes))
         return composition, nil
     }
-    // Read extension fields
-    composition.HCropPos    = binary.BigEndian.Uint16(bytes[:2])
-    composition.VCropPos    = binary.BigEndian.Uint16(bytes[2:4])
-    composition.CropWidth   = binary.BigEndian.Uint16(bytes[4:6])
-    composition.CropHeight  = binary.BigEndian.Uint16(bytes[6:8])
+    // Read extension fields (offset 8 for extension data)
+    composition.HCropPos    = binary.BigEndian.Uint16(bytes[8:10])
+    composition.VCropPos    = binary.BigEndian.Uint16(bytes[10:12])
+    composition.CropWidth   = binary.BigEndian.Uint16(bytes[12:14])
+    composition.CropHeight  = binary.BigEndian.Uint16(bytes[14:16])
     return composition, nil
 }

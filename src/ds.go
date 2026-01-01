@@ -114,6 +114,18 @@ func (d *DisplaySet) AppendSRT(ocr *gosseract.Client, f *os.File, i uint, ets st
 func (d *DisplaySet) OCR(ocr *gosseract.Client) (string, error) {
     var text, ocr_result string
 
+    // Get active composition objects to filter ODS processing
+    activeComps := d.GetActiveCompositionObjects()
+    activeObjIDs := make(map[uint16]bool)
+    for _, comp := range activeComps {
+        activeObjIDs[comp.ObjID] = true
+    }
+
+    // If no active composition objects, log warning but continue processing all ODS
+    if len(activeComps) == 0 {
+        log.Printf("Warning: No active composition objects in DisplaySet at PTS %d - processing all ODS", d.PCS.PTS)
+    }
+
     for _, ods := range d.ODS {
         objData, ok := ods.Data.(ObjectData)
         if !ok {
@@ -121,6 +133,13 @@ func (d *DisplaySet) OCR(ocr *gosseract.Client) (string, error) {
             continue
         }
         if !objData.Ended {
+            continue
+        }
+        
+        // Only process ODS that are referenced by active composition objects
+        // This avoids processing ODS for windows that aren't displayed
+        if len(activeComps) > 0 && !activeObjIDs[objData.ID] {
+            log.Printf("Warning: Skipping ODS ID %d - not referenced by any active composition object", objData.ID)
             continue
         }
         
