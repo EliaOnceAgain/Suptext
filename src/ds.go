@@ -21,11 +21,30 @@ func (d *DisplaySet) StartTS() string {
 }
 
 func (d *DisplaySet) IsEpochStart() bool {
-    return d.PCS.Data.(PresentationCompositionData).State == 0x80
+    if d.PCS.Data == nil {
+        return false
+    }
+    pcsData, ok := d.PCS.Data.(PresentationCompositionData)
+    if !ok {
+        return false
+    }
+    state := pcsData.State
+    return state == 0x40 || state == 0x80
 }
 
 func (d *DisplaySet) IsEpochEnd() bool {
     return d.PCS.Data.(PresentationCompositionData).State == 0
+}
+
+func (d *DisplaySet) GetActiveCompositionObjects() []CompositionObject {
+    if d.PCS.Data == nil {
+        return []CompositionObject{}
+    }
+    pcsData, ok := d.PCS.Data.(PresentationCompositionData)
+    if !ok {
+        return []CompositionObject{}
+    }
+    return pcsData.Comps
 }
 
 func (d *DisplaySet) AppendSRT(ocr *gosseract.Client, f *os.File, i uint, ets string) error {

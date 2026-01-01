@@ -25,14 +25,22 @@ func (p *PGS) PrintDisplaySet(i uint) {
     p.Sections[i].Print()
 }
 
-func (p *PGS) GetSectionEndTimestamp(start_section int) string {
-    for i := start_section + 1; i < len(p.Sections); i++ {
-        if p.Sections[i].IsEpochStart() || p.Sections[i].IsEpochEnd(){
-            return p.Sections[i].StartTS()
+func (p *PGS) GetSectionEndTimestamp(startSection int) string {
+    currentPTS := p.Sections[startSection].PCS.PTS
+
+    // Search for the next epoch start or end
+    for i := startSection + 1; i < len(p.Sections); i++ {
+        nextPCS := p.Sections[i].PCS.Data.(PresentationCompositionData)
+        if p.Sections[i].IsEpochStart() || p.Sections[i].IsEpochEnd() || nextPCS.State != p.Sections[startSection].PCS.Data.(PresentationCompositionData).State {
+            return FormatMilliseconds(p.Sections[i].PCS.PTS)
         }
     }
-    return FormatMilliseconds(p.Sections[start_section].PCS.PTS + 10000)
+
+    // No future epoch/end found, fallback: last known PTS + safe buffer (e.g., 5s)
+    safeEnd := currentPTS + 5000 // milliseconds
+    return FormatMilliseconds(safeEnd)
 }
+
 
 func (p *PGS) ToSRT(fout *os.File) error {
     client := gosseract.NewClient()
