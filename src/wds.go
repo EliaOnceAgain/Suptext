@@ -86,10 +86,10 @@ func ValidateWindowBounds(window WindowDefinition, screenWidth, screenHeight uin
     }
     
     // Check if window extends beyond screen bounds
-    if window.Hpos+window.Width > screenWidth {
+    if uint32(window.Hpos)+uint32(window.Width) > uint32(screenWidth) {
         return fmt.Errorf("Window extends beyond screen width (Hpos %d + Width %d > %d)", window.Hpos, window.Width, screenWidth)
     }
-    if window.Vpos+window.Height > screenHeight {
+    if uint32(window.Vpos)+uint32(window.Height) > uint32(screenHeight) {
         return fmt.Errorf("Window extends beyond screen height (Vpos %d + Height %d > %d)", window.Vpos, window.Height, screenHeight)
     }
     
