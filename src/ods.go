@@ -68,9 +68,6 @@ func NewObjectData(bytes []byte) (ObjectData, error) {
         if obj.Width == 0 || obj.Height == 0 {
             log.Printf("Warning: Invalid Width/Height for ODS ID %d (Width=%d, Height=%d)", id, obj.Width, obj.Height)
         }
-        if obj.Width > 1920 || obj.Height > 1080 {
-            log.Printf("Warning: Unusually large dimensions for ODS ID %d (Width=%d, Height=%d)", id, obj.Width, obj.Height)
-        }
         
         obj.Data = bytes[11:]
         obj.BytesRead += uint32(len(bytes[FirstSequenceHeaderSize:]))

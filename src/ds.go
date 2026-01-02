@@ -133,6 +133,7 @@ func (d *DisplaySet) OCR(ocr *gosseract.Client) (string, error) {
             continue
         }
         if !objData.Ended {
+            log.Printf("Warning: Skipping incomplete ODS sequence - ObjID %d at PTS %d (sequence not ended)", objData.ID, ods.PTS)
             continue
         }
         
@@ -148,9 +149,17 @@ func (d *DisplaySet) OCR(ocr *gosseract.Client) (string, error) {
             log.Printf("Warning: Skipping ODS ID %d - invalid dimensions (Width=%d, Height=%d)", objData.ID, objData.Width, objData.Height)
             continue
         }
-        if objData.Width > 1920 || objData.Height > 1080 {
-            log.Printf("Warning: Skipping ODS ID %d - dimensions exceed reasonable bounds (Width=%d, Height=%d)", objData.ID, objData.Width, objData.Height)
-            continue
+        
+        // Only validate against screen dimensions if we have real PCS dimensions (not defaults)
+        // This avoids false warnings for 4K/UHD content when PCS data is missing
+        if d.PCS.Data != nil {
+            pcsData, ok := d.PCS.Data.(PresentationCompositionData)
+            if ok && pcsData.Width > 0 && pcsData.Height > 0 {
+                if objData.Width > pcsData.Width || objData.Height > pcsData.Height {
+                    log.Printf("Warning: ODS ID %d dimensions (Width=%d, Height=%d) exceed screen dimensions (Width=%d, Height=%d)", objData.ID, objData.Width, objData.Height, pcsData.Width, pcsData.Height)
+                    // Continue processing instead of skipping - allow oversized ODS for compatibility
+                }
+            }
         }
         
         // Decode image data
