@@ -10,14 +10,17 @@ import (
 )
 
 func CreateImage(pixels [][]uint8, palettes [256]PaletteDefinition) (*image.RGBA, error) {
-    height := len(pixels)
+    // Validate dimensions first
+	if len(pixels) == 0 {
+		return nil, fmt.Errorf("Failed creating image: empty matrix")
+	}
+	if len(pixels[0]) == 0 {
+		return nil, fmt.Errorf("Failed creating image: zero width")
+	}
+	
+	height := len(pixels)
 	width := len(pixels[0])
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
-
-    // Validate dimensions
-	if height == 0 || width == 0 {
-		return img, fmt.Errorf("Failed creating image: empty matrix")
-	}
 
     // Fill colors
 	for row := 0; row < height; row++ {
@@ -63,6 +66,10 @@ func RLEDecode(bytes []byte) ([][]uint8, error) {
             i += 1
             continue
         }
+        // Check bounds before accessing bytes[i+1]
+        if i+1 >= len(bytes) {
+            break
+        }
         // 0, 0 = line end
         if bytes[i + 1] == 0 {
             img = append(img, line)
@@ -76,16 +83,25 @@ func RLEDecode(bytes []byte) ([][]uint8, error) {
         // Flags
         has_color := bytes[i + 1] & 0x80 != 0
         is_14bit_count := bytes[i + 1] & 0x40 != 0
-        // Adapt defaults according to flags
+        // Adapt defaults according to flags with bounds checking
         if !is_14bit_count && !has_color {
             i += 2
         } else if is_14bit_count && !has_color {
+            if i+2 >= len(bytes) {
+                break
+            }
             count = count<<8 | uint16(bytes[i + 2])
             i += 3
         } else if !is_14bit_count && has_color {
+            if i+2 >= len(bytes) {
+                break
+            }
             color = uint8(bytes[i + 2])
             i += 3
         } else {
+            if i+3 >= len(bytes) {
+                break
+            }
             count = count<<8 | uint16(bytes[i + 2])
             color = uint8(bytes[i + 3])
             i += 4
